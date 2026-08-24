@@ -561,14 +561,28 @@
 
         function calculateSalesAnalysis() { const now = new Date(); const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); const monthStart = new Date(now.getFullYear(), now.getMonth(), 1); let dailySales = 0, dailyProfit = 0, weeklySales = 0, weeklyProfit = 0, monthlySales = 0, monthlyProfit = 0; state.orders.forEach(order => { const orderDate = new Date(order.id); let orderTotal = 0, orderProfit = 0; order.cart.forEach(item => { const price = Number(item.price) || 0; const quantity = Number(item.quantity) || 0; const buyPrice = Number(item.buyingPrice) || 0; orderTotal += price * quantity; orderProfit += (price - buyPrice) * quantity; }); if (orderDate >= todayStart && order.id > state.analysisReset.daily) { dailySales += orderTotal; dailyProfit += orderProfit; } if (orderDate >= weekStart && order.id > state.analysisReset.weekly) { weeklySales += orderTotal; weeklyProfit += orderProfit; } if (orderDate >= monthStart && order.id > state.analysisReset.monthly) { monthlySales += orderTotal; monthlyProfit += orderProfit; } }); document.getElementById('daily-sales').innerText = '$' + dailySales.toFixed(2); document.getElementById('daily-profit').innerText = '$' + dailyProfit.toFixed(2); document.getElementById('weekly-sales').innerText = '$' + weeklySales.toFixed(2); document.getElementById('weekly-profit').innerText = '$' + weeklyProfit.toFixed(2); document.getElementById('monthly-sales').innerText = '$' + monthlySales.toFixed(2); document.getElementById('monthly-profit').innerText = '$' + monthlyProfit.toFixed(2); }
 
-        // Initialize & Load Session
-        const savedSession = localStorage.getItem('el_dawlyaa_session');
-        if (savedSession) {
-            currentUser = JSON.parse(savedSession);
-            document.getElementById('logout-btn').style.display = 'block';
-            if (currentUser.email === 'admin') {
-                document.getElementById('dev-nav-link').style.display = 'block';
-            }
+     // Initialize & Load Session
+const savedSession = localStorage.getItem('el_dawlyaa_session');
+if (savedSession) {
+    currentUser = JSON.parse(savedSession);
+    document.getElementById('logout-btn').style.display = 'block';
+    
+    if (currentUser.email === 'admin') {
+        document.getElementById('dev-nav-link').style.display = 'block';
+        // Automatically go to the Dev Page on refresh
+        showPage('developer-page'); 
+    } else {
+        // Automatically go to the Home Page on refresh
+        showPage('home-page');
+    }
+} else {
+    // If no session exists, show the login page
+    showPage('login-page');
+}
+
+applyLanguage();
+updateLogoDisplay();
+
         }
 
         applyLanguage();
