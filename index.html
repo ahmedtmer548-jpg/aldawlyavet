@@ -36,8 +36,6 @@
         .suggestions-box { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-top: none; z-index: 100; max-height: 200px; overflow-y: auto; display: none; border-radius: 0 0 5px 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
         .suggestion-item:hover { background-color: #f9f9f9; color: var(--primary-red); }
-        
-        /* Developer Sections */
         .dev-settings { background: var(--white); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px dashed var(--primary-orange); }
         .notifications { background: var(--white); padding: 15px; border-radius: 10px; margin-bottom: 30px; border-left: 5px solid var(--primary-orange); }
         .notif-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
@@ -84,15 +82,13 @@
         </div>
     </nav>
 
-    <!-- PAGES -->
+    <!-- Login Page -->
     <div id="login-page" class="page-section active">
         <div class="auth-container">
             <div class="logo"><div class="logo-main"><img src="YOUR_LOGO_URL_HERE" style="width: 70px; height: 70px;"></div></div>
             <h3 data-i18n="login_title">Login Page</h3>
             <div class="form-group"><label data-i18n="email_label">Email</label><input type="email" id="login-email" class="input" placeholder="example@gmail.com"></div>
-            <div class="form-group"><label data-i18n="password_label">Password</label>
-                <div class="password-wrapper"><input type="password" id="login-password" class="input"><span class="eye-icon" onclick="togglePassword('login-password', this)">👁️</span></div>
-            </div>
+            <div class="form-group"><label data-i18n="password_label">Password</label><div class="password-wrapper"><input type="password" id="login-password" class="input"><span class="eye-icon" onclick="togglePassword('login-password', this)">👁️</span></div></div>
             <div class="form-group dev-option"><input type="checkbox" id="is-dev-login"><label for="is-dev-login" data-i18n="login_as_dev">Login as Developer?</label></div>
             <button onclick="handleLogin()" class="btn btn-primary btn-full" data-i18n="sign_in_btn">Sign In</button>
             <div class="auth-switch"><span data-i18n="no_account">Don't have an account?</span> <a onclick="showPage('signup-page')" data-i18n="signup_link">Sign up here</a></div>
@@ -100,6 +96,7 @@
         </div>
     </div>
     
+    <!-- Signup Page -->
     <div id="signup-page" class="page-section">
         <div class="auth-container">
             <h3 data-i18n="signup_title">Sign Up Page</h3>
@@ -111,6 +108,7 @@
         </div>
     </div>
     
+    <!-- Forgot Password Page -->
     <div id="forgot-page" class="page-section">
         <div class="auth-container">
             <h3 data-i18n="reset_password_title">Reset Password</h3>
@@ -121,6 +119,7 @@
         </div>
     </div>
 
+    <!-- Home Page -->
     <div id="home-page" class="page-section">
         <h1 style="text-align:center; font-size: 3rem; margin-bottom: 10px; color: var(--primary-red);" data-i18n="brand_title">AL Dawlya</h1>
         <p style="text-align:center; font-size: 1.2rem; margin-bottom: 30px;" data-i18n="brand_subtitle">Premium Veterinary Products</p>
@@ -148,6 +147,7 @@
         </div>
     </div>
 
+    <!-- Developer Page -->
     <div id="developer-page" class="page-section">
         <h2 style="color: var(--primary-red);" data-i18n="dev_title">Developer Page (Admin)</h2>
         <div class="dev-settings"><h3 data-i18n="settings_title">Settings</h3><label data-i18n="change_logo_label">Change Company Logo</label><input type="file" class="input" onchange="changeLogo(this)"></div>
@@ -165,7 +165,7 @@
         </div></div>
     </div>
 
-    <!-- MODALS -->
+    <!-- Modals -->
     <div id="orderModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal()">&times;</span><h3 style="color: var(--primary-red);">Order Details</h3><div id="modal-content"></div></div></div>
     <div id="deleteModal" class="delete-modal"><div class="delete-box"><h3 data-i18n="delete_product_msg">Are you sure you want to delete this product?</h3><div class="delete-actions"><button class="btn-yes" onclick="confirmDeleteProduct()" data-i18n="yes_btn">Yes</button><button class="btn-no" onclick="cancelDelete()" data-i18n="no_btn">No</button></div></div></div>
     <div id="deleteNotifModal" class="delete-modal"><div class="delete-box"><h3 data-i18n="delete_notif_msg">Are you sure you want to delete this notification?</h3><div class="delete-actions"><button class="btn-yes" onclick="confirmDeleteNotif()" data-i18n="yes_btn">Yes</button><button class="btn-no" onclick="cancelDeleteNotif()" data-i18n="no_btn">No</button></div></div></div>
@@ -239,11 +239,18 @@
             products: [],
             sections: JSON.parse(localStorage.getItem('el_dawlyaa_sections')) || [],
             orders: JSON.parse(localStorage.getItem('el_dawlyaa_orders')) || [],
-            notifications: JSON.parse(localStorage.getItem('el_dawlyaa_notifications')) || [],
+            notifications: [],
             analysisReset: JSON.parse(localStorage.getItem('el_dawlyaa_analysis_reset')) || { daily: 0, weekly: 0, monthly: 0 }
         };
 
         // REAL-TIME FIREBASE LISTENERS
+        db.collection("settings").doc("company").onSnapshot((doc) => {
+            if (doc.exists && doc.data().logo) {
+                state.logo = doc.data().logo;
+                updateLogoDisplay();
+            }
+        });
+
         db.collection("products").onSnapshot((snapshot) => {
             state.products = snapshot.docs.map(doc => doc.data());
             renderProducts();
@@ -255,27 +262,16 @@
             renderNotifications();
         });
 
-        // Replace saveState for Firebase
         function saveState() {
-            // Save users to local storage (no auth yet)
             localStorage.setItem('el_dawlyaa_users', JSON.stringify(state.users));
             localStorage.setItem('el_dawlyaa_sections', JSON.stringify(state.sections));
             localStorage.setItem('el_dawlyaa_logo', state.logo);
             
-            // Save products and notifications to Firebase
             state.products.forEach(async (p) => { await db.collection("products").doc(p.id.toString()).set(p); });
             state.notifications.forEach(async (n) => { await db.collection("notifications").doc(n.id.toString()).set(n); });
         }
 
-        // Keep save state for User profile (Local Storage only for now)
-        function saveUserProfile() {
-            if (!currentUser) return;
-            const profile = { first: document.getElementById('info-first').value, second: document.getElementById('info-second').value, address: document.getElementById('info-address').value, phone: document.getElementById('info-phone').value };
-            const userIdx = state.users.findIndex(u => u.email === currentUser.email);
-            if (userIdx > -1) { state.users[userIdx].profile = profile; localStorage.setItem('el_dawlyaa_users', JSON.stringify(state.users)); }
-        }
-
-        // APPLY LANGUAGE
+        // Apply Language
         function applyLanguage() {
             document.documentElement.lang = currentLang;
             document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
@@ -290,7 +286,6 @@
             applyLanguage();
         }
 
-        // Everything else (Forms, Navigation, Notifications, etc.)
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -300,40 +295,244 @@
             if(pageId === 'info-page') loadUserProfile();
         }
 
+        // User Session (Stays Logged In!)
+        let currentUser = null;
+        let currentCart = [];
+        let searchTerm = ''; let pendingDeleteId = null; let pendingDeleteNotifId = null; let pendingDeleteSectionId = null; let pendingResetType = null;
+
+        function handleSignup() {
+            const email = document.getElementById('signup-email').value;
+            const pass = document.getElementById('signup-password').value;
+            const confirm = document.getElementById('signup-confirm').value;
+            if (!validateEmail(email)) return alert(t('email_label') + ' Not Valid');
+            if (!pass || !confirm) return alert('Please fill all fields.');
+            if (pass !== confirm) return alert('Passwords do not match.');
+            if (state.users.find(u => u.email === email.trim())) return alert('User already exists.');
+            state.users.push({ email: email.trim(), password: pass });
+            state.notifications.push({ id: Date.now(), type: 'signup', msg: `New Signup Received: ${email.trim()}` });
+            saveState();
+            alert(t('create_account_btn') + ' Success!');
+            showPage('login-page');
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            const isDev = document.getElementById('is-dev-login').checked;
+            if (!email || !pass) return alert('Please fill in your credentials.');
+            if (!validateEmail(email) && !isDev) return alert('Please enter a valid email address.');
+
+            if (isDev) {
+                if (email.trim() === 'admin' && pass === '239199') {
+                    currentUser = { email: 'admin', isDev: true };
+                    localStorage.setItem('el_dawlyaa_session', JSON.stringify(currentUser));
+                    document.getElementById('dev-nav-link').style.display = 'block';
+                    document.getElementById('logout-btn').style.display = 'block';
+                    showPage('developer-page');
+                    return;
+                } else return alert('Invalid Developer Credentials');
+            } else {
+                const user = state.users.find(u => u.email === email.trim() && u.password === pass);
+                if (user) {
+                    currentUser = user;
+                    localStorage.setItem('el_dawlyaa_session', JSON.stringify(currentUser));
+                    document.getElementById('dev-nav-link').style.display = 'none';
+                    document.getElementById('logout-btn').style.display = 'block';
+                    showPage('home-page');
+                    return;
+                }
+                return alert('Invalid User Credentials');
+            }
+        }
+
+        function handlePasswordReset() {
+            const email = document.getElementById('forgot-email').value.trim();
+            if (!validateEmail(email)) return alert('Please enter a valid email address.');
+            const user = state.users.find(u => u.email === email);
+            if (!user) return alert('No account found with this email address.');
+            
+            const newPass = document.getElementById('forgot-new-password').value.trim();
+            if (!newPass) {
+                document.getElementById('new-password-section').style.display = 'block';
+                alert('Simulated Email Sent! Please enter your new password.');
+                return;
+            }
+            user.password = newPass;
+            localStorage.setItem('el_dawlyaa_users', JSON.stringify(state.users));
+            alert('Password reset successful! Please login.');
+            showPage('login-page');
+        }
+
+        function togglePassword(fieldId, icon) {
+            const input = document.getElementById(fieldId);
+            if (input.type === "password") { input.type = "text"; icon.innerText = "🙈"; }
+            else { input.type = "password"; icon.innerText = "👁️"; }
+        }
+
+        function openLogoutModal() { document.getElementById('logoutModal').style.display = "block"; }
+        function cancelLogout() { document.getElementById('logoutModal').style.display = "none"; }
+        function performLogout() {
+            currentUser = null; currentCart = [];
+            localStorage.removeItem('el_dawlyaa_session'); // Remove session
+            document.getElementById('dev-nav-link').style.display = 'none';
+            document.getElementById('logout-btn').style.display = 'none';
+            document.getElementById('logoutModal').style.display = "none";
+            showPage('login-page');
+        }
+
+        function updateLogoDisplay() { document.querySelectorAll('.logo img').forEach(img => img.src = state.logo); }
+        
+        // NEW LOGO SYNC!
+        function changeLogo(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const maxWidth = 200;
+                        const scale = maxWidth / img.width;
+                        canvas.width = maxWidth;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        state.logo = canvas.toDataURL('image/png');
+                        
+                        // Save to Local Storage
+                        localStorage.setItem('el_dawlyaa_logo', state.logo); 
+                        // Save to Firebase (Syncs everywhere!)
+                        db.collection("settings").doc("company").set({ logo: state.logo }); 
+                        
+                        updateLogoDisplay();
+                        alert(t('change_logo_label') + ' Done!');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         function validateEmail(email) { if (!email) return false; email = email.trim(); const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; return regex.test(email); }
-        let currentUser = null; let currentCart = []; let searchTerm = ''; let pendingDeleteId = null; let pendingDeleteNotifId = null; let pendingDeleteSectionId = null; let pendingResetType = null;
 
-        function handleSignup() { const email = document.getElementById('signup-email').value; const pass = document.getElementById('signup-password').value; const confirm = document.getElementById('signup-confirm').value; if (!validateEmail(email)) return alert(t('email_label') + ' Not Valid'); if (!pass || !confirm) return alert('Please fill all fields.'); if (pass !== confirm) return alert('Passwords do not match.'); if (state.users.find(u => u.email === email.trim())) return alert('User already exists.'); state.users.push({ email: email.trim(), password: pass }); state.notifications.push({ id: Date.now(), type: 'signup', msg: `New Signup Received: ${email.trim()}` }); saveState(); alert(t('create_account_btn') + ' Success!'); showPage('login-page'); }
+        // User Profile
+        function saveUserProfile() {
+            if (!currentUser) return;
+            const profile = {
+                first: document.getElementById('info-first').value,
+                second: document.getElementById('info-second').value,
+                address: document.getElementById('info-address').value,
+                phone: document.getElementById('info-phone').value
+            };
+            const userIdx = state.users.findIndex(u => u.email === currentUser.email);
+            if (userIdx > -1) { state.users[userIdx].profile = profile; localStorage.setItem('el_dawlyaa_users', JSON.stringify(state.users)); }
+        }
 
-        function handleLogin() { const email = document.getElementById('login-email').value; const pass = document.getElementById('login-password').value; const isDev = document.getElementById('is-dev-login').checked; if (!email || !pass) return alert('Please fill in your credentials.'); if (!validateEmail(email) && !isDev) return alert('Please enter a valid email address.'); if (isDev) { if (email.trim() === 'admin' && pass === '239199') { currentUser = { email: 'admin', isDev: true }; document.getElementById('dev-nav-link').style.display = 'block'; document.getElementById('logout-btn').style.display = 'block'; alert('Developer Logged In Successfully!'); showPage('developer-page'); return; } else return alert('Invalid Developer Credentials'); } else { const user = state.users.find(u => u.email === email.trim() && u.password === pass); if (user) { currentUser = user; document.getElementById('dev-nav-link').style.display = 'none'; document.getElementById('logout-btn').style.display = 'block'; alert('Welcome back, ' + email.trim()); showPage('home-page'); return; } return alert('Invalid User Credentials'); } }
-
-        function handlePasswordReset() { const email = document.getElementById('forgot-email').value.trim(); if (!validateEmail(email)) return alert('Please enter a valid email address.'); const user = state.users.find(u => u.email === email); if (!user) return alert('No account found with this email address.'); const newPass = document.getElementById('forgot-new-password').value.trim(); if (!newPass) { document.getElementById('new-password-section').style.display = 'block'; alert('Simulated Email Sent! Please enter your new password.'); return; } user.password = newPass; localStorage.setItem('el_dawlyaa_users', JSON.stringify(state.users)); alert('Password reset successful! Please login.'); showPage('login-page'); }
-
-        function togglePassword(fieldId, icon) { const input = document.getElementById(fieldId); if (input.type === "password") { input.type = "text"; icon.innerText = "🙈"; } else { input.type = "password"; icon.innerText = "👁️"; } }
-        function openLogoutModal() { document.getElementById('logoutModal').style.display = "block"; } function cancelLogout() { document.getElementById('logoutModal').style.display = "none"; } function performLogout() { currentUser = null; currentCart = []; document.getElementById('dev-nav-link').style.display = 'none'; document.getElementById('logout-btn').style.display = 'none'; document.getElementById('logoutModal').style.display = "none"; showPage('login-page'); }
-        function updateLogoDisplay() { document.querySelectorAll('.logo img').forEach(img => img.src = state.logo); } function changeLogo(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const maxWidth = 200; const scale = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scale; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); state.logo = canvas.toDataURL('image/png'); saveState(); updateLogoDisplay(); alert(t('change_logo_label') + ' Done!'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
-        function loadUserProfile() { if (!currentUser) return; const user = state.users.find(u => u.email === currentUser.email); if (user && user.profile) { document.getElementById('info-first').value = user.profile.first || ''; document.getElementById('info-second').value = user.profile.second || ''; document.getElementById('info-address').value = user.profile.address || ''; document.getElementById('info-phone').value = user.profile.phone || ''; } }
+        function loadUserProfile() {
+            if (!currentUser) return;
+            const user = state.users.find(u => u.email === currentUser.email);
+            if (user && user.profile) {
+                document.getElementById('info-first').value = user.profile.first || '';
+                document.getElementById('info-second').value = user.profile.second || '';
+                document.getElementById('info-address').value = user.profile.address || '';
+                document.getElementById('info-phone').value = user.profile.phone || '';
+            }
+        }
 
         // Search
-        function filterProducts(term) { searchTerm = term; renderProducts(); renderSuggestions(term); } function renderSuggestions(term) { const box = document.getElementById('search-suggestions'); if (!term.trim()) { box.style.display = 'none'; return; } const matches = state.products.filter(p => p.name.toLowerCase().includes(term.toLowerCase()) || (p.nameAr && p.nameAr.includes(term))); if (matches.length === 0) { box.style.display = 'none'; return; } box.innerHTML = matches.slice(0, 5).map(p => `<div class="suggestion-item" onclick="selectSuggestion('${p.name.replace(/'/g, "\\'")}')">${p.name}</div>`).join(''); box.style.display = 'block'; } function selectSuggestion(name) { document.getElementById('product-search').value = name; filterProducts(name); document.getElementById('search-suggestions').style.display = 'none'; }
+        function filterProducts(term) { searchTerm = term; renderProducts(); renderSuggestions(term); }
+        function renderSuggestions(term) {
+            const box = document.getElementById('search-suggestions');
+            if (!term.trim()) { box.style.display = 'none'; return; }
+            const matches = state.products.filter(p => p.name.toLowerCase().includes(term.toLowerCase()) || (p.nameAr && p.nameAr.includes(term)));
+            if (matches.length === 0) { box.style.display = 'none'; return; }
+            box.innerHTML = matches.slice(0, 5).map(p => `<div class="suggestion-item" onclick="selectSuggestion('${p.name.replace(/'/g, "\\'")}')">${p.name}</div>`).join('');
+            box.style.display = 'block';
+        }
+        function selectSuggestion(name) { document.getElementById('product-search').value = name; filterProducts(name); document.getElementById('search-suggestions').style.display = 'none'; }
 
         // Products
-        function renderProducts() { const list = document.getElementById('product-list'); list.innerHTML = ''; const filteredProducts = state.products.filter(p => { if (!searchTerm) return true; return p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.nameAr && p.nameAr.includes(searchTerm)); }); filteredProducts.forEach(p => { const inCart = currentCart.find(item => item.id === p.id); const qty = inCart ? inCart.quantity : 0; const displayName = currentLang === 'ar' && p.nameAr ? p.nameAr : p.name; let buttonHtml = ''; if (p.storage <= 0) { buttonHtml = `<button style="background: #ccc; cursor: not-allowed;" disabled>${t('out_of_stock')}</button>`; } else if (qty > 0) { buttonHtml = `<div style="display: flex; align-items: center; justify-content: center; gap: 5px;"><button class="qty-btn" onclick="updateQuantity(${p.id}, -1)">-</button><span style="font-weight: 700;">${qty}</span><button class="qty-btn" onclick="updateQuantity(${p.id}, 1)">+</button></div>`; } else { buttonHtml = `<button onclick="addToCart(${p.id})" class="btn btn-orange">${t('add_to_cart')}</button>`; } list.innerHTML += `<div class="product-card"><img class="product-photo" src="${p.photo}"><div class="card-body"><div class="product-name">${displayName}</div><div class="product-price">$${p.price} (EGP)</div><div style="font-size: 0.8rem; margin-bottom: 10px;">Delivery: ${p.delivery}</div>${buttonHtml}</div></div>`; }); updateCartBadge(); }
+        function renderProducts() {
+            const list = document.getElementById('product-list');
+            list.innerHTML = '';
+            const filteredProducts = state.products.filter(p => { if (!searchTerm) return true; return p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.nameAr && p.nameAr.includes(searchTerm)); });
+            filteredProducts.forEach(p => {
+                const inCart = currentCart.find(item => item.id === p.id);
+                const qty = inCart ? inCart.quantity : 0;
+                const displayName = currentLang === 'ar' && p.nameAr ? p.nameAr : p.name;
+                let buttonHtml = '';
+                if (p.storage <= 0) { buttonHtml = `<button style="background: #ccc; cursor: not-allowed;" disabled>${t('out_of_stock')}</button>`; }
+                else if (qty > 0) { buttonHtml = `<div style="display: flex; align-items: center; justify-content: center; gap: 5px;"><button class="qty-btn" onclick="updateQuantity(${p.id}, -1)">-</button><span style="font-weight: 700;">${qty}</span><button class="qty-btn" onclick="updateQuantity(${p.id}, 1)">+</button></div>`; }
+                else { buttonHtml = `<button onclick="addToCart(${p.id})" class="btn btn-orange">${t('add_to_cart')}</button>`; }
+                list.innerHTML += `<div class="product-card"><img class="product-photo" src="${p.photo}"><div class="card-body"><div class="product-name">${displayName}</div><div class="product-price">$${p.price} (EGP)</div><div style="font-size: 0.8rem; margin-bottom: 10px;">Delivery: ${p.delivery}</div>${buttonHtml}</div></div>`;
+            });
+            updateCartBadge();
+        }
 
-        function addToCart(id) { if (!currentUser) return alert('Please login as a user first.'); const p = state.products.find(x => x.id === id); const existingItem = currentCart.find(item => item.id === id); if (p.storage <= 0) return alert(t('out_of_stock')); if (existingItem) { if (existingItem.quantity < p.storage) existingItem.quantity++; else { alert('Maximum available stock reached.'); return; } } else { currentCart.push({ ...p, quantity: 1, price: Number(p.price) || 0, buyingPrice: Number(p.buyingPrice) || 0 }); } renderProducts(); renderCart(); }
+        function addToCart(id) {
+            if (!currentUser) return alert('Please login as a user first.');
+            const p = state.products.find(x => x.id === id);
+            const existingItem = currentCart.find(item => item.id === id);
+            if (p.storage <= 0) return alert(t('out_of_stock'));
+            if (existingItem) { if (existingItem.quantity < p.storage) existingItem.quantity++; else { alert('Maximum available stock reached.'); return; } }
+            else { currentCart.push({ ...p, quantity: 1, price: Number(p.price) || 0, buyingPrice: Number(p.buyingPrice) || 0 }); }
+            renderProducts(); renderCart();
+        }
 
-        function updateQuantity(id, change) { const item = currentCart.find(i => i.id === id); const p = state.products.find(x => x.id === id); if (item) { if (change > 0) { if (item.quantity < p.storage) item.quantity += change; else { alert('Maximum available stock reached.'); } } else { item.quantity += change; if (item.quantity <= 0) currentCart = currentCart.filter(i => i.id !== id); } } renderProducts(); renderCart(); }
+        function updateQuantity(id, change) {
+            const item = currentCart.find(i => i.id === id);
+            const p = state.products.find(x => x.id === id);
+            if (item) {
+                if (change > 0) { if (item.quantity < p.storage) item.quantity += change; else { alert('Maximum available stock reached.'); } }
+                else { item.quantity += change; if (item.quantity <= 0) currentCart = currentCart.filter(i => i.id !== id); }
+            }
+            renderProducts(); renderCart();
+        }
 
-        function updateCartBadge() { const totalQty = currentCart.reduce((sum, item) => sum + item.quantity, 0); const badge = document.getElementById('cart-count-badge'); if (badge) { badge.innerText = totalQty; badge.style.display = totalQty > 0 ? 'inline-block' : 'none'; } }
+        function updateCartBadge() {
+            const totalQty = currentCart.reduce((sum, item) => sum + item.quantity, 0);
+            const badge = document.getElementById('cart-count-badge');
+            if (badge) { badge.innerText = totalQty; badge.style.display = totalQty > 0 ? 'inline-block' : 'none'; }
+        }
 
-        function renderCart() { const list = document.getElementById('cart-list'); list.innerHTML = ''; let total = 0; currentCart.forEach((item) => { total += Number(item.price || 0) * Number(item.quantity || 0); list.innerHTML += `<div class="cart-item"><img src="${item.photo}"><div style="flex: 1;"><div class="product-name">${item.name}</div><div class="product-price">$${item.price}</div><div class="qty-controls"><button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button><span>${item.quantity}</span><button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button></div></div><div style="text-align:right;"><h4>$${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}</h4><button onclick="updateQuantity(${item.id}, -${item.quantity})" style="background:red; border:none; color:white; padding:5px 10px; cursor:pointer;">${t('remove')}</button></div></div>`; }); if (currentCart.length === 0) list.innerHTML = `<p>${t('cart_empty')}</p>`; document.getElementById('cart-total').innerText = '$' + total.toFixed(2); updateCartBadge(); }
+        function renderCart() {
+            const list = document.getElementById('cart-list');
+            list.innerHTML = '';
+            let total = 0;
+            currentCart.forEach((item) => {
+                total += Number(item.price || 0) * Number(item.quantity || 0);
+                list.innerHTML += `<div class="cart-item"><img src="${item.photo}"><div style="flex: 1;"><div class="product-name">${item.name}</div><div class="product-price">$${item.price}</div><div class="qty-controls"><button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button><span>${item.quantity}</span><button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button></div></div><div style="text-align:right;"><h4>$${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}</h4><button onclick="updateQuantity(${item.id}, -${item.quantity})" style="background:red; border:none; color:white; padding:5px 10px; cursor:pointer;">${t('remove')}</button></div></div>`;
+            });
+            if (currentCart.length === 0) list.innerHTML = `<p>${t('cart_empty')}</p>`;
+            document.getElementById('cart-total').innerText = '$' + total.toFixed(2);
+            updateCartBadge();
+        }
 
-        function placeOrder() { const fname = document.getElementById('info-first').value; const sname = document.getElementById('info-second').value; const add = document.getElementById('info-address').value; const phone = document.getElementById('info-phone').value; if (!fname || !sname || !add || !phone) return alert('Please fill all your information.'); if (!currentUser) return alert('You must be logged in.'); saveUserProfile(); const order = { id: Date.now(), user: currentUser.email, cart: currentCart, info: { fname, sname, add, phone } }; state.orders.push(order); order.cart.forEach(item => { const p = state.products.find(x => x.id === item.id); if (p) { p.storage -= item.quantity; if (p.storage < 0) p.storage = 0; } }); state.notifications.push({ id: Date.now(), type: 'order', msg: `New Order from ${fname}`, data: order }); saveState(); currentCart = []; document.querySelectorAll('#info-page input, #info-page textarea').forEach(i => i.value = ''); alert(t('place_order_btn') + ' Success!'); renderProducts(); showPage('home-page'); renderNotifications(); calculateSalesAnalysis(); }
+        function placeOrder() {
+            const fname = document.getElementById('info-first').value;
+            const sname = document.getElementById('info-second').value;
+            const add = document.getElementById('info-address').value;
+            const phone = document.getElementById('info-phone').value;
+            if (!fname || !sname || !add || !phone) return alert('Please fill all your information.');
+            if (!currentUser) return alert('You must be logged in.');
+            saveUserProfile();
+            const order = { id: Date.now(), user: currentUser.email, cart: currentCart, info: { fname, sname, add, phone } };
+            state.orders.push(order);
+            order.cart.forEach(item => { const p = state.products.find(x => x.id === item.id); if (p) { p.storage -= item.quantity; if (p.storage < 0) p.storage = 0; } });
+            state.notifications.push({ id: Date.now(), type: 'order', msg: `New Order from ${fname}`, data: order });
+            saveState();
+            currentCart = [];
+            document.querySelectorAll('#info-page input, #info-page textarea').forEach(i => i.value = '');
+            alert(t('place_order_btn') + ' Success!');
+            renderProducts(); showPage('home-page'); renderNotifications(); calculateSalesAnalysis();
+        }
 
         // Sections & Developer
         function renderSections() { const container = document.getElementById('sections-list'); container.innerHTML = ''; state.sections.forEach((section, index) => { const el = document.createElement('div'); el.style.cssText = "background:#eee; padding: 8px 12px; border-radius: 5px; display:flex; align-items:center; gap:10px; border:1px solid #ccc;"; el.innerHTML = `<span>${section}</span><button onclick="openDeleteSectionModal(${index})" style="background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">X</button>`; container.appendChild(el); }); }
         function addSection() { const input = document.getElementById('new-section-name'); const name = input.value.trim(); if (!name) return alert('Please enter a section name.'); state.sections.push(name); saveState(); renderSections(); renderDeveloperProducts(); input.value = ''; }
-        function openDeleteSectionModal(index) { pendingDeleteSectionId = index; document.getElementById('deleteSectionModal').style.display = "block"; } function cancelDeleteSection() { pendingDeleteSectionId = null; document.getElementById('deleteSectionModal').style.display = "none"; } function confirmDeleteSection() { if (pendingDeleteSectionId !== null) { const deletedSection = state.sections[pendingDeleteSectionId]; state.sections.splice(pendingDeleteSectionId, 1); state.products.forEach(p => { if (p.section === deletedSection) p.section = ''; }); saveState(); renderSections(); renderDeveloperProducts(); renderProducts(); } cancelDeleteSection(); }
+        function openDeleteSectionModal(index) { pendingDeleteSectionId = index; document.getElementById('deleteSectionModal').style.display = "block"; }
+        function cancelDeleteSection() { pendingDeleteSectionId = null; document.getElementById('deleteSectionModal').style.display = "none"; }
+        function confirmDeleteSection() { if (pendingDeleteSectionId !== null) { const deletedSection = state.sections[pendingDeleteSectionId]; state.sections.splice(pendingDeleteSectionId, 1); state.products.forEach(p => { if (p.section === deletedSection) p.section = ''; }); saveState(); renderSections(); renderDeveloperProducts(); renderProducts(); } cancelDeleteSection(); }
 
         function renderDeveloperProducts() { const list = document.getElementById('dev-product-list'); let sectionOptions = `<option value="">${t('no_section')}</option>`; state.sections.forEach(sec => { sectionOptions += `<option value="${sec}">${sec}</option>`; }); list.innerHTML = `<div class="dev-product-row" style="background: var(--dark); color: white; font-weight: bold;"><b>${t('photo_header')}</b><b>${t('name_header')}</b><b>${t('name_ar_header')}</b><b>${t('buying_header')}</b><b>${t('selling_header')}</b><b>${t('profit_header')}</b><b>${t('storage_header')}</b><b>${t('section_header')}</b><b>${t('actions_header')}</b></div>`; state.products.forEach(p => { list.innerHTML += `<div class="dev-product-row"><input type="file" onchange="changeProductPhoto(${p.id}, this)"><input type="text" value="${p.name}" onchange="changeProductField(${p.id}, 'name', this.value)"><input type="text" value="${p.nameAr || ''}" onchange="changeProductField(${p.id}, 'nameAr', this.value)"><input type="number" value="${p.buyingPrice}" oninput="updateProfit(${p.id})" onchange="changeProductField(${p.id}, 'buyingPrice', this.value)"><input type="number" value="${p.price}" oninput="updateProfit(${p.id})" onchange="changeProductField(${p.id}, 'price', this.value)"><input type="text" id="profit_${p.id}" class="profit-input" value="${p.price - p.buyingPrice}" readonly><input type="number" value="${p.storage}" onchange="changeProductField(${p.id}, 'storage', this.value)"><select onchange="changeProductField(${p.id}, 'section', this.value)">${sectionOptions.replace(`value="${p.section}"`, `value="${p.section}" selected`)}</select><div><button onclick="openDeleteModal(${p.id})" style="background:red; color:white; border:none; padding: 5px 10px; border-radius: 5px; cursor:pointer;">${t('remove')}</button></div></div>`; }); }
 
@@ -342,22 +541,38 @@
         function changeProductPhoto(id, input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const p = state.products.find(x => x.id === id); p.photo = e.target.result; saveState(); renderProducts(); }; reader.readAsDataURL(file); } }
         function addNewProduct() { state.products.push({ id: Date.now(), photo: 'https://via.placeholder.com/150', name: 'New Product', nameAr: '', buyingPrice: 0, price: 0, delivery: 'No', storage: 0, section: '' }); saveState(); renderDeveloperProducts(); renderProducts(); }
         
-        function openDeleteModal(id) { pendingDeleteId = id; document.getElementById('deleteModal').style.display = "block"; } function cancelDelete() { pendingDeleteId = null; document.getElementById('deleteModal').style.display = "none"; } function confirmDeleteProduct() { if (pendingDeleteId !== null) { db.collection("products").doc(pendingDeleteId.toString()).delete(); state.products = state.products.filter(x => x.id !== pendingDeleteId); renderDeveloperProducts(); renderProducts(); } cancelDelete(); }
+        function openDeleteModal(id) { pendingDeleteId = id; document.getElementById('deleteModal').style.display = "block"; }
+        function cancelDelete() { pendingDeleteId = null; document.getElementById('deleteModal').style.display = "none"; }
+        function confirmDeleteProduct() { if (pendingDeleteId !== null) { db.collection("products").doc(pendingDeleteId.toString()).delete(); state.products = state.products.filter(x => x.id !== pendingDeleteId); renderDeveloperProducts(); renderProducts(); } cancelDelete(); }
         
         function clearNotifications() { if(confirm(t('clear_all_btn'))) { state.notifications = []; saveState(); renderNotifications(); } }
-        function openDeleteNotifModal(id) { pendingDeleteNotifId = id; document.getElementById('deleteNotifModal').style.display = "block"; } function cancelDeleteNotif() { pendingDeleteNotifId = null; document.getElementById('deleteNotifModal').style.display = "none"; } function confirmDeleteNotif() { if (pendingDeleteNotifId !== null) { db.collection("notifications").doc(pendingDeleteNotifId.toString()).delete(); state.notifications = state.notifications.filter(n => n.id !== pendingDeleteNotifId); renderNotifications(); } cancelDeleteNotif(); }
+        function openDeleteNotifModal(id) { pendingDeleteNotifId = id; document.getElementById('deleteNotifModal').style.display = "block"; }
+        function cancelDeleteNotif() { pendingDeleteNotifId = null; document.getElementById('deleteNotifModal').style.display = "none"; }
+        function confirmDeleteNotif() { if (pendingDeleteNotifId !== null) { db.collection("notifications").doc(pendingDeleteNotifId.toString()).delete(); state.notifications = state.notifications.filter(n => n.id !== pendingDeleteNotifId); renderNotifications(); } cancelDeleteNotif(); }
 
         function renderNotifications() { const list = document.getElementById('notif-list'); list.innerHTML = ''; if (state.notifications.length === 0) list.innerHTML = `<div class="notif-item">${t('notifications_title')} Empty</div>`; state.notifications.reverse().slice(0, 20).forEach(n => { const color = n.type === 'signup' ? 'var(--primary-red)' : 'var(--primary-orange)'; let buttonHtml = ''; if (n.type === 'order') { buttonHtml = `<button onclick="viewOrderDetails(${n.id})" style="background: var(--primary-orange); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">${t('view')}</button>`; } list.innerHTML += `<div class="notif-item" style="border-left: 5px solid ${color}; padding-left: 10px; margin-bottom: 5px;"><div><b>${n.type.toUpperCase()}:</b> ${n.msg}</div><div>${buttonHtml}<button class="notif-btn" onclick="openDeleteNotifModal(${n.id})">X</button></div></div>`; }); }
 
         function viewOrderDetails(id) { const notif = state.notifications.find(n => n.id === id); if (notif && notif.data) { const order = notif.data; let itemsHtml = '<ul>'; let total = 0; order.cart.forEach(item => { let itemTotal = Number(item.price || 0) * Number(item.quantity || 0); total += itemTotal; itemsHtml += `<li>${item.name} x ${item.quantity} - $${itemTotal.toFixed(2)}</li>`; }); itemsHtml += '</ul>'; document.getElementById('modal-content').innerHTML = `<p><strong>Customer:</strong> ${order.info.fname} ${order.info.sname}</p><p><strong>Email:</strong> ${order.user}</p><p><strong>Address:</strong> ${order.info.add}</p><p><strong>Phone:</strong> ${order.info.phone}</p><hr><strong>Items:</strong> ${itemsHtml}<hr><h3 style="color: var(--primary-red); text-align: right;">Total: $${total.toFixed(2)}</h3>`; document.getElementById('orderModal').style.display = "block"; } }
         function closeModal() { document.getElementById('orderModal').style.display = "none"; }
 
-        function openAnalysisResetModal(type) { pendingResetType = type; document.getElementById('analysisResetModal').style.display = "block"; } function cancelAnalysisReset() { pendingResetType = null; document.getElementById('analysisResetModal').style.display = "none"; } function confirmAnalysisReset() { if (pendingResetType) { state.analysisReset[pendingResetType] = Date.now(); saveState(); calculateSalesAnalysis(); alert(t('reset_analysis_msg')); } cancelAnalysisReset(); }
+        function openAnalysisResetModal(type) { pendingResetType = type; document.getElementById('analysisResetModal').style.display = "block"; }
+        function cancelAnalysisReset() { pendingResetType = null; document.getElementById('analysisResetModal').style.display = "none"; }
+        function confirmAnalysisReset() { if (pendingResetType) { state.analysisReset[pendingResetType] = Date.now(); saveState(); calculateSalesAnalysis(); alert(t('reset_analysis_msg')); } cancelAnalysisReset(); }
 
         function calculateSalesAnalysis() { const now = new Date(); const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); const monthStart = new Date(now.getFullYear(), now.getMonth(), 1); let dailySales = 0, dailyProfit = 0, weeklySales = 0, weeklyProfit = 0, monthlySales = 0, monthlyProfit = 0; state.orders.forEach(order => { const orderDate = new Date(order.id); let orderTotal = 0, orderProfit = 0; order.cart.forEach(item => { const price = Number(item.price) || 0; const quantity = Number(item.quantity) || 0; const buyPrice = Number(item.buyingPrice) || 0; orderTotal += price * quantity; orderProfit += (price - buyPrice) * quantity; }); if (orderDate >= todayStart && order.id > state.analysisReset.daily) { dailySales += orderTotal; dailyProfit += orderProfit; } if (orderDate >= weekStart && order.id > state.analysisReset.weekly) { weeklySales += orderTotal; weeklyProfit += orderProfit; } if (orderDate >= monthStart && order.id > state.analysisReset.monthly) { monthlySales += orderTotal; monthlyProfit += orderProfit; } }); document.getElementById('daily-sales').innerText = '$' + dailySales.toFixed(2); document.getElementById('daily-profit').innerText = '$' + dailyProfit.toFixed(2); document.getElementById('weekly-sales').innerText = '$' + weeklySales.toFixed(2); document.getElementById('weekly-profit').innerText = '$' + weeklyProfit.toFixed(2); document.getElementById('monthly-sales').innerText = '$' + monthlySales.toFixed(2); document.getElementById('monthly-profit').innerText = '$' + monthlyProfit.toFixed(2); }
 
-        // Initialize
-        applyLanguage(); updateLogoDisplay();
+        // Initialize & Load Session
+        const savedSession = localStorage.getItem('el_dawlyaa_session');
+        if (savedSession) {
+            currentUser = JSON.parse(savedSession);
+            document.getElementById('logout-btn').style.display = 'block';
+            if (currentUser.email === 'admin') {
+                document.getElementById('dev-nav-link').style.display = 'block';
+            }
+        }
+
+        applyLanguage();
+        updateLogoDisplay();
     </script>
 </body>
 </html>
